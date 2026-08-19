@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from release_agent.api import create_app
+from release_agent.api import create_app, main
 from release_agent.errors import GitHubClientError
 from release_agent.models import ReleaseRequest
 
@@ -66,6 +66,27 @@ class FakeGitHubClient:
 class FailingGitHubClient:
     def resolve_commit_sha(self, owner: str, repo: str, ref: str) -> str:
         raise GitHubClientError("GitHub API request failed: 404 not found")
+
+
+def test_api_console_entrypoint_uses_environment(monkeypatch):
+    calls = []
+
+    def fake_run(app_path, **kwargs):
+        calls.append((app_path, kwargs))
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+    monkeypatch.setenv("RELEASE_COORDINATOR_HOST", "127.0.0.1")
+    monkeypatch.setenv("RELEASE_COORDINATOR_PORT", "8999")
+    monkeypatch.setenv("RELEASE_COORDINATOR_RELOAD", "true")
+
+    main()
+
+    assert calls == [
+        (
+            "release_agent.api:app",
+            {"host": "127.0.0.1", "port": 8999, "reload": True},
+        )
+    ]
 
 
 def test_preview_api_returns_analysis_result():

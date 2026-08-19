@@ -59,6 +59,9 @@ pip launcher instead:
 python -m pip --python .\.venv\Scripts\python.exe install -e ".[dev]"
 ```
 
+For wheel builds and installation in another environment, see
+[docs/installing-package.md](docs/installing-package.md).
+
 ## Test
 
 ```powershell

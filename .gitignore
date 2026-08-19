@@ -4,6 +4,8 @@ __pycache__/
 *.db
 *.egg-info/
 artifacts/
+build/
+dist/
 .pytest_cache/
 .tmp/
 test-tmp/

@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -286,3 +287,26 @@ def create_app(
 
 
 app = create_app()
+
+
+def main() -> None:
+    import uvicorn
+
+    host = os.getenv("RELEASE_COORDINATOR_HOST", "0.0.0.0")
+    port = int(os.getenv("RELEASE_COORDINATOR_PORT", "8010"))
+    reload_enabled = os.getenv("RELEASE_COORDINATOR_RELOAD", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+    uvicorn.run(
+        "release_agent.api:app",
+        host=host,
+        port=port,
+        reload=reload_enabled,
+    )
+
+
+if __name__ == "__main__":
+    main()
