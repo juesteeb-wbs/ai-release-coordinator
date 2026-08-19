@@ -1,6 +1,9 @@
 # n8n Workflow Plan
 
-This plan describes the first n8n workflow for the AI Release Agent demo.
+This plan describes the n8n workflow around the extracted AI Release
+Coordinator. The workflow still uses `ai-release-agent-demo-v2` as the target
+repository for demonstration data, but the local Python API now belongs to this
+`ai-release-coordinator` repository.
 
 The recommended initial n8n version calls the local Python preview API through
 an HTTP Request node. The Python API wraps the tested collector and analyzer.
@@ -31,12 +34,12 @@ Excluded:
 ## Runtime Assumptions
 
 The first workflow assumes self-hosted n8n runs on the same Windows machine as
-the repository.
+the Release Coordinator repository.
 
-Repository path:
+Coordinator repository path:
 
 ```text
-C:\Users\seime\PythonProject\ai-release-agent-demo-v2
+C:\Users\seime\PythonProject\ai-release-coordinator
 ```
 
 Preview API command:
@@ -52,8 +55,9 @@ environment variable:
 GITHUB_TOKEN
 ```
 
-The token must be restricted to the demo repository and use read-only
-permissions.
+The token must be restricted to the target repository and use read-only
+permissions. For the current demo target, that repository is
+`juesteeb-wbs/ai-release-agent-demo-v2`.
 
 ## Release Request
 
@@ -144,7 +148,7 @@ Use a Set or Code node to derive local artifact paths.
 Suggested values:
 
 ```text
-repo_path = C:\Users\seime\PythonProject\ai-release-agent-demo-v2
+repo_path = C:\Users\seime\PythonProject\ai-release-coordinator
 evidence_file = artifacts\evidence\release-1.1.0-evidence.json
 analysis_dir = artifacts\analysis\release-1.1.0
 analysis_file = artifacts\analysis\release-1.1.0\analysis.json

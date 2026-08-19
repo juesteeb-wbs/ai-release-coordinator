@@ -1,41 +1,55 @@
-# AI Release Agent Demo
+# AI Release Coordinator
 
-This repository demonstrates a GitHub-based AI Release Agent concept.
+This repository contains the Python side of an AI-assisted Release Coordinator.
+It is separated from the demo application repository so the coordinator can
+eventually be installed and used against any GitHub repository.
 
-The first baseline release is a compact Python FastAPI support-ticket API. It is
-intended to become the `v1.0.0` starting point for later release-agent evidence
-collection and release-note generation demos.
+The coordinator is preview-only. It collects release evidence, prepares review
+artifacts, validates structured AI output, serves a local dashboard, and keeps
+the final decision human-owned and auditable. It does not publish releases,
+create tags, merge pull requests, deploy code, or modify GitHub resources.
 
-## Phase 1 scope
+## Repository Split
 
-Implemented in the baseline application:
+The project is intentionally split into two roles:
 
-- Create support tickets
-- Retrieve a ticket by ID
-- List support tickets
-- Filter tickets by category, priority, and status
-- Assign ticket category and priority
-- Basic API-key authentication
-- SQLite persistence
-- Typed request and response validation
-- Unit and API-level tests with `pytest`
+```text
+Target repository
+- application code
+- release branches and tags
+- pull requests and CI evidence
 
-Not included in Phase 1:
+Release Coordinator repository
+- GitHub evidence collection
+- deterministic analysis helpers
+- AI input/output validation
+- local FastAPI API
+- dashboard for human review
+- n8n workflow documentation
+```
 
-- n8n workflow implementation
-- GitHub API integration
-- release analysis
-- publishing releases or modifying remote GitHub resources
+For the current demo, the target repository is:
+
+```text
+juesteeb-wbs/ai-release-agent-demo-v2
+```
+
+See [docs/repository-separation.md](docs/repository-separation.md) for the
+separation plan.
 
 ## Requirements
 
 - Python 3.11 or newer
+- A read-only GitHub token for evidence collection
+- Optional: PostgreSQL for the dashboard review queue
+- Optional: n8n for the workflow orchestration demo
 
 ## Setup
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
 If the virtual environment is created without pip, install through the global
@@ -45,115 +59,34 @@ pip launcher instead:
 python -m pip --python .\.venv\Scripts\python.exe install -e ".[dev]"
 ```
 
-## Run the API
-
-```powershell
-.\.venv\Scripts\python -m uvicorn app.main:app --reload
-```
-
-The API uses these defaults for local development:
-
-```text
-SUPPORT_TICKET_API_KEY=dev-support-api-key
-SUPPORT_DATABASE_PATH=support_tickets.sqlite3
-```
-
-Both values can be overridden with environment variables.
-
-### Migration note
-
-Starting with the `release/1.1.0` branch, API-key configuration uses
-`SUPPORT_TICKET_API_KEY`. Deployments that previously set `SUPPORT_API_KEY` must
-rename that environment variable before upgrading.
-
 ## Test
 
 ```powershell
-.\.venv\Scripts\python -m pytest
+.\.venv\Scripts\python.exe -m pytest
 ```
 
-## Dependency security note
+## Run the Local API
 
-The application declares a direct Starlette dependency floor of `>=0.40.0`.
-Starlette `0.40.0` includes a fix for a denial-of-service issue in
-`multipart/form-data` request parsing. FastAPI is constrained to `>=0.115.3`
-because that release supports the Starlette `>=0.40.0` range.
-
-## Collect release evidence
-
-Phase 3 adds a read-only evidence collector for comparing the baseline tag with
-the release branch. The collector reads GitHub evidence and writes local JSON; it
-does not create releases, merge pull requests, push commits, or publish
-anything.
-
-For public repositories, unauthenticated requests may work. To avoid rate limits,
-set a read-only GitHub token in the environment:
+Set a read-only GitHub token before starting the API:
 
 ```powershell
 $env:GITHUB_TOKEN="your-read-only-token"
+.\.venv\Scripts\python.exe -m uvicorn release_agent.api:app --host 0.0.0.0 --port 8010 --reload
 ```
 
-The collector uses the operating system certificate store when available. If
-your environment requires a custom certificate authority bundle, set:
-
-```powershell
-$env:GITHUB_CA_BUNDLE="C:\path\to\ca-bundle.pem"
-```
-
-Collect evidence for the demo release boundary:
-
-```powershell
-.\.venv\Scripts\python -m release_agent.cli collect-evidence `
-  --owner juesteeb-wbs `
-  --repo ai-release-agent-demo-v2 `
-  --base-ref v1.0.0 `
-  --target-ref release/1.1.0 `
-  --release-version 1.1.0 `
-  --output artifacts/evidence/release-1.1.0-evidence.json
-```
-
-The `artifacts/` directory is ignored because generated evidence may include
-repository text, pull request text, and other untrusted data.
-
-Analyze collected evidence and generate local draft artifacts:
-
-```powershell
-.\.venv\Scripts\python -m release_agent.cli analyze-evidence `
-  --evidence-file artifacts\evidence\release-1.1.0-evidence.json `
-  --output-dir artifacts\analysis\release-1.1.0
-```
-
-The analyzer is deterministic and rule-based in this phase. It produces
-structured change records, claim records, release-note drafts, a technical
-changelog, suggested regression tests, risk assessment, QA checklist, deployment
-guidance, and missing-documentation warnings. AI-assisted analysis is planned
-for a later phase.
-
-The analysis output also includes review-focused fields for n8n:
+When n8n runs in Docker, call the API from n8n through:
 
 ```text
-review_markdown
-executive_summary
-blocker_summary
-warning_summary
-artifact_summary
+http://host.docker.internal:8010
 ```
 
-The CLI writes `review-preview.md` beside the other generated Markdown files.
+When calling from the Windows host directly, use:
 
-## Run the release preview API
-
-The preview API exposes the collector and analyzer through HTTP so local n8n
-workflows can use an HTTP Request node instead of running shell commands.
-
-Start the API:
-
-```powershell
-$env:GITHUB_TOKEN="your-read-only-token"
-.\.venv\Scripts\python -m uvicorn release_agent.api:app --host 127.0.0.1 --port 8010 --reload
+```text
+http://127.0.0.1:8010
 ```
 
-Preview a release analysis:
+## Preview a Release
 
 ```powershell
 Invoke-RestMethod `
@@ -171,162 +104,87 @@ Invoke-RestMethod `
   }'
 ```
 
-The endpoint is read-only. It does not publish releases, push commits, create
-tags, merge pull requests, or modify GitHub resources.
+The endpoint returns the release analysis and an AI input package derived from
+GitHub evidence. The request is read-only and requires `publish_enabled` to be
+`false`.
 
-### Release Coordinator dashboard
+## AI Workflow Endpoints
 
-The same FastAPI service also includes a lightweight dashboard UI for local
-human-review demos:
+Build an AI input package from an analysis response:
+
+```text
+POST /release-analysis/ai-input-package
+```
+
+Validate structured AI review output:
+
+```text
+POST /release-analysis/validate-ai-review
+```
+
+Generate a deterministic demo AI review draft without calling a model:
+
+```text
+POST /release-analysis/ai-review-draft
+```
+
+The structured AI output contract is documented in
+[docs/structured-ai-output-contract.md](docs/structured-ai-output-contract.md).
+
+## Dashboard
+
+Open the local dashboard at:
 
 ```text
 http://127.0.0.1:8010/dashboard
 ```
 
-The dashboard can prepare payloads locally without calling n8n. To let it trigger
-the two local n8n workflows, configure webhook URLs before starting the API:
+The dashboard can trigger n8n workflows when webhook URLs are configured:
 
 ```powershell
-$env:RELEASE_AGENT_PREVIEW_WEBHOOK_URL="http://localhost:5678/webhook/..."
-$env:RELEASE_AGENT_REVIEW_WEBHOOK_URL="http://localhost:5678/webhook/..."
+$env:RELEASE_AGENT_PREVIEW_WEBHOOK_URL="http://localhost:5678/webhook/release-agent-preview"
+$env:RELEASE_AGENT_REVIEW_WEBHOOK_URL="http://localhost:5678/webhook/release-agent-review-decision"
 ```
 
-`RELEASE_AGENT_PREVIEW_WEBHOOK_URL` is used by the Create release briefing form.
-`RELEASE_AGENT_REVIEW_WEBHOOK_URL` is used by the Submit human decision form.
-Both actions remain preview-only and do not publish or modify GitHub resources.
-
-To enable the Postgres-backed review queue and detail pages, configure:
+To enable the Postgres-backed review queue and workflow status cards:
 
 ```powershell
 $env:RELEASE_AGENT_DATABASE_URL="postgresql://user:password@localhost:5432/database"
 ```
 
-Then reinstall dependencies if needed:
+The dashboard is designed for human-in-the-loop review. It shows release risk,
+safety-gate status, generated artifacts, workflow status, and reviewer decision
+state.
+
+## CLI
+
+Collect evidence:
 
 ```powershell
-.\.venv\Scripts\python -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m release_agent.cli collect-evidence `
+  --owner juesteeb-wbs `
+  --repo ai-release-agent-demo-v2 `
+  --base-ref v1.0.0 `
+  --target-ref release/1.1.0 `
+  --release-version 1.1.0 `
+  --output artifacts/evidence/release-1.1.0-evidence.json
 ```
 
-With the database URL configured, `/dashboard` lists active records from
-`release_reviews`: pending reviews and completed reviews that have not been
-processed yet. `/dashboard/reviews/{id}` shows the review details, Human Review
-Card link, and reviewer decision form. Submitting the form updates the Postgres
-row and can optionally call `RELEASE_AGENT_REVIEW_WEBHOOK_URL` for Workflow 2
-processing.
-
-Resolve the current SHA for a Git ref:
+Analyze evidence:
 
 ```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://127.0.0.1:8010/release-analysis/resolve-ref `
-  -ContentType "application/json" `
-  -Body '{
-    "repository_owner": "juesteeb-wbs",
-    "repository_name": "ai-release-agent-demo-v2",
-    "ref": "release/1.1.0"
-  }'
+.\.venv\Scripts\python.exe -m release_agent.cli analyze-evidence `
+  --evidence-file artifacts\evidence\release-1.1.0-evidence.json `
+  --output-dir artifacts\analysis\release-1.1.0
 ```
 
-n8n can call this endpoint before recording approval and compare the returned
-`sha` with the analyzed `target_sha`. If the values differ, the target branch
-moved and the workflow should require a fresh preview analysis.
+Generated artifacts are written under `artifacts/`, which is ignored by Git.
 
-Generate a demo AI-assisted review draft from an existing analysis response:
+## Safety Model
 
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://127.0.0.1:8010/release-analysis/ai-review-draft `
-  -ContentType "application/json" `
-  -Body '{
-    "analysis": {
-      "...": "analysis JSON returned by /release-analysis/preview"
-    },
-    "draft_mode": "demo"
-  }'
-```
-
-This endpoint builds the AI input package, generates a structured demo draft,
-and validates the draft against deterministic evidence rules. It does not call a
-model yet. The demo generator is a safe stand-in for the later model call so the
-workflow can be tested without adding AI credentials.
-
-Build only the AI input package for a future model call:
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://127.0.0.1:8010/release-analysis/ai-input-package `
-  -ContentType "application/json" `
-  -Body '{
-    "analysis": {
-      "...": "analysis JSON returned by /release-analysis/preview"
-    }
-  }'
-```
-
-Validate structured AI review output:
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://127.0.0.1:8010/release-analysis/validate-ai-review `
-  -ContentType "application/json" `
-  -Body '{
-    "ai_input_package": {
-      "...": "AI input package returned by /release-analysis/ai-input-package"
-    },
-    "ai_review_draft": {
-      "...": "structured AI output following docs/structured-ai-output-contract.md"
-    }
-  }'
-```
-
-These split endpoints are intended for the later model-backed n8n workflow:
-n8n builds the input package, sends it to a model, then asks Python to validate
-the model output before showing it to a reviewer.
-
-## Endpoints
-
-`GET /health` is public.
-
-Ticket endpoints require an `X-API-Key` header:
-
-```text
-X-API-Key: dev-support-api-key
-```
-
-Available ticket endpoints:
-
-```text
-POST   /tickets
-GET    /tickets
-GET    /tickets/{ticket_id}
-PATCH  /tickets/{ticket_id}
-```
-
-Supported ticket values:
-
-```text
-category: billing | technical | account | product | other
-priority: low | medium | high | urgent
-status: open | in_progress | resolved | closed
-```
-
-Example create request:
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://127.0.0.1:8000/tickets `
-  -Headers @{ "X-API-Key" = "dev-support-api-key" } `
-  -ContentType "application/json" `
-  -Body '{
-    "title": "Cannot access billing portal",
-    "description": "The customer receives a permission error when opening invoices.",
-    "customer_email": "alex@example.com",
-    "category": "billing",
-    "priority": "high"
-  }'
-```
+- GitHub evidence and repository text are treated as untrusted input.
+- Secrets and tokens must never enter source control or AI prompts.
+- AI output is advisory and must pass deterministic validation.
+- Safety gates are deterministic and visible to the reviewer.
+- Human approval is required.
+- Publication remains disabled in this demo.

@@ -1,5 +1,10 @@
 # GitHub-Based AI Release Agent
 
+> Historical context: this specification was written before the project was
+> split into two repositories. The demo application now lives in the target
+> repository, while this repository contains the extracted Release Coordinator
+> Python package, dashboard, and workflow-facing API.
+
 ## 1. Document purpose
 
 This document is the authoritative specification for a demonstration project that shows how an AI-assisted release workflow can collect GitHub release evidence, analyze software changes, generate release artifacts, validate factual claims, and present the result for human approval.
@@ -7,9 +12,12 @@ This document is the authoritative specification for a demonstration project tha
 The project consists of two related components:
 
 1. A small Python demo repository with a realistic release history.
-2. An n8n workflow that implements the AI Release Agent.
+2. A Release Coordinator implementation and n8n workflow that analyze that
+   repository.
 
-The first implementation phase covers only the demo repository and its `v1.0.0` baseline. The n8n workflow is implemented after the repository contains the required release evidence.
+The first implementation phase covered only the demo repository and its
+`v1.0.0` baseline. The current coordinator extraction keeps that demo repository
+as target evidence while the coordinator code lives separately.
 
 ## 2. Project objective
 

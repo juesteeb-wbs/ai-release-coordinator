@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ai-release-agent-demo"
+name = "ai-release-coordinator"
 version = "1.0.0"
-description = "Baseline FastAPI support-ticket API for an AI Release Agent demonstration."
+description = "Python API, dashboard, and evidence tooling for an AI-assisted Release Coordinator."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -30,4 +30,4 @@ pythonpath = ["."]
 addopts = "-p no:cacheprovider"
 
 [tool.setuptools]
-packages = ["app", "release_agent"]
+packages = ["release_agent"]

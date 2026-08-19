@@ -91,7 +91,7 @@ def test_dashboard_home_renders_review_console():
     response = client.get("/dashboard")
 
     assert response.status_code == 200
-    assert "Release briefing console" in response.text
+    assert "Release review console" in response.text
     assert "Start briefing" in response.text
     assert "Release review queue" in response.text
     assert "Create Release Briefing" in response.text

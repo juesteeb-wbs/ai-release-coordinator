@@ -1,8 +1,8 @@
 # Demo Walkthrough
 
-This walkthrough shows the current AI Release Agent demo at a high level. It is
-intended for explaining the project, not for replacing the detailed
-implementation docs.
+This walkthrough shows the current AI-assisted Release Coordinator demo at a
+high level. It is intended for explaining the project, not for replacing the
+detailed implementation docs.
 
 ## Demo Message
 
@@ -12,12 +12,12 @@ control.
 The core idea is:
 
 ```text
-GitHub evidence
--> deterministic analysis
+target GitHub repository
+-> Release Coordinator evidence collection
+-> AI-assisted analysis and deterministic validation
 -> reviewer-friendly artifacts
 -> safety gates
 -> human decision
--> AI assistance planned around validated evidence
 ```
 
 AI is positioned as a drafting and review assistant. Deterministic code keeps
@@ -26,7 +26,7 @@ controls. Humans remain responsible for approval.
 
 ## What To Show
 
-### 1. Baseline Application
+### 1. Target Demo Application
 
 Show the FastAPI support-ticket app as the demo product being released.
 
@@ -52,8 +52,8 @@ This gives the Release Agent enough evidence to classify and explain a release.
 
 ### 3. Evidence Collection And Analysis
 
-Show that the Python release agent can collect GitHub evidence and generate a
-structured analysis.
+Show that the Python Release Coordinator can collect GitHub evidence and
+generate a structured analysis.
 
 Important points:
 
@@ -85,16 +85,14 @@ Important points:
 Show the current n8n workflow:
 
 ```text
-Manual Trigger
--> Set Release Request
--> Validate Request
--> Build Artifact Paths
--> HTTP Request to preview API
--> Build Review Summary
--> Build Compact Front Page
--> Evaluate Safety Gates
--> Simulate human decision
--> Record Preview Decision
+Dashboard or Webhook Trigger
+-> Preview API
+-> AI input package
+-> AI analysis and validation
+-> reviewer package and artifacts
+-> safety gates
+-> dashboard human decision
+-> decision record
 ```
 
 The workflow demonstrates the release-review loop from request to decision.

@@ -1,12 +1,12 @@
 # AI-Assisted Analysis Design
 
-This document defines how AI should be introduced into the AI Release Agent demo.
-The goal is to show useful AI assistance without making the model responsible
-for safety, approval, or publishing decisions.
+This document defines how AI should be used by the extracted AI Release
+Coordinator. The goal is to show useful AI assistance without making the model
+responsible for safety, approval, or publishing decisions.
 
 ## Positioning
 
-The Release Agent uses AI as a reviewer and drafting assistant.
+The Release Coordinator uses AI as a reviewer and drafting assistant.
 
 Deterministic code remains responsible for:
 
@@ -58,7 +58,7 @@ Suggested input fields:
 
 ```json
 {
-  "repository": "juesteeb-wbs/ai-release-agent-demo-v2",
+  "repository": "owner/target-repository",
   "release_range": "v1.0.0..release/1.1.0",
   "base_sha": "...",
   "target_sha": "...",

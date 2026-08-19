@@ -1,7 +1,8 @@
 # n8n Next Phase Plan
 
-This document defines the next implementation phase after the initial
-preview-only n8n workflow.
+This document records the next implementation phase after the initial
+preview-only n8n workflow. It was written during the demo build and is retained
+as implementation history for the extracted Release Coordinator.
 
 The current workflow can submit a release request, call the local FastAPI preview
 API, receive analysis JSON, build a compact review summary, evaluate safety
